@@ -2,9 +2,9 @@ import streamlit as st
 import tempfile
 import os
 import pandas as pd
-from rag_setup.rag import run_custom_rag_pipeline
-from preprocessing.description_gen import generate_descriptions_from_video
-from rag_setup.auto_insert_data import seed_from_csv
+from scripts.rag_setup.rag import run_custom_rag_pipeline
+from scripts.preprocessing.description_gen import generate_descriptions_from_video
+from scripts.rag_setup.auto_insert_data import seed_from_csv
 from pathlib import Path
 from moviepy.video.io.VideoFileClip import VideoFileClip
 
