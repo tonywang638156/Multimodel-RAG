@@ -71,3 +71,24 @@ def run_custom_rag_pipeline(user_query: str = "", image_path: str = None):
         "llm_output": llm_output,
         "metadata": metadata
     }
+
+
+import shutil
+import os
+import atexit
+def clean_temp_outputs():
+    # Remove CSVs
+    for csv_file in ["frames_transcripts.csv", "frames_with_descriptions.csv"]:
+        if os.path.exists(csv_file):
+            os.remove(csv_file)
+            print(f"🧹 Removed: {csv_file}")
+
+    # Remove folders
+    for folder in ["frames", "audio"]:
+        if os.path.exists(folder):
+            shutil.rmtree(folder)
+            print(f"🧹 Removed folder: {folder}")
+
+# 🧹 Register cleanup to run when Streamlit exits
+import atexit
+atexit.register(clean_temp_outputs)
