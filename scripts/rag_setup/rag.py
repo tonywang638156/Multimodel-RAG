@@ -1,6 +1,6 @@
-from vectorstores.raw_multimodal_lancedb import RawMultimodalLanceDB
-from embeddings.bridgetower_embeddings import BridgeTowerEmbeddings
-from MLM.openai_lvlm import OpenAIVLM
+from scripts.vectorstores.raw_multimodal_lancedb import RawMultimodalLanceDB
+from scripts.embeddings.bridgetower_embeddings import BridgeTowerEmbeddings
+from scripts.MLM.openai_lvlm import OpenAIVLM
 import base64
 from PIL import Image
 from io import BytesIO

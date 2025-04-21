@@ -1,5 +1,10 @@
 # 🎬 Video-Audio Multimodal RAG
 
+[![Streamlit](https://img.shields.io/badge/Streamlit-1.33.0-red?logo=streamlit)](https://streamlit.io/)
+[![Python](https://img.shields.io/badge/python-3.13.3-blue.svg?logo=python)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+
 A fully local **multimodal Retrieval-Augmented Generation (RAG)** system that:
 - 🔍 Extracts visual and audio segments from uploaded videos
 - 🧠 Describes keyframes with a vision-language LLM (e.g., GPT-4o-mini)

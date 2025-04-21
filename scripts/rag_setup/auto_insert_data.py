@@ -4,8 +4,8 @@ import pandas as pd
 import lancedb
 from pathlib import Path
 
-from vectorstores.raw_multimodal_lancedb import RawMultimodalLanceDB
-from embeddings.bridgetower_embeddings import BridgeTowerEmbeddings
+from scripts.vectorstores.raw_multimodal_lancedb import RawMultimodalLanceDB
+from scripts.embeddings.bridgetower_embeddings import BridgeTowerEmbeddings
 
 def seed_from_csv(
     csv_path: str = "./preprocessing/frames_with_descriptions.csv",
