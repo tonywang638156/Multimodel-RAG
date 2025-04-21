@@ -1,0 +1,36 @@
+# Core Python utilities
+numpy>=1.23
+pillow>=10.0
+tqdm>=4.64
+pathlib     # Optional; built-in for Python 3.4+, but harmless
+scikit-image
+matplotlib
+pandas
+pillow
+streamlit
+
+# Deep learning & transformers
+torch>=2.0
+transformers>=4.39
+
+# Video & image processing
+opencv-python>=4.8
+
+# Multimedia processing (MoviePy 2.x)
+moviepy>=2.1.1
+imageio>=2.5
+imageio-ffmpeg>=0.6
+proglog>=0.1.10
+
+# RAG & multimodal
+lancedb>=0.21.2
+datasets>=2.18.0
+sentence-transformers>=2.2.2  # Add if you use it
+
+# Utilities
+requests>=2.31.0
+python-dotenv>=1.0.0
+base58>=2.1.1
+
+# Openai
+openai>=1.0.0
