@@ -110,7 +110,7 @@ I use **human evaluation** as our primary assessment method due to the inherentl
 ---
 
 ## ⚖️ Video Demo of Comparing Performance btw. Naive Approach and Improved DL Approach
-[check out this video]()
+[check out this video](https://youtu.be/ahkUO0b5QmE)
 
 ---
 
@@ -149,4 +149,4 @@ GOOGLE_API_KEY=AI-...
 streamlit run app.py
 ```
 ---
-## Deployment: Host on AWS: [click here]()
+## Deployment: Host on AWS: [click here](http://18.222.115.92:8501/)
