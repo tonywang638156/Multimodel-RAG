@@ -133,8 +133,8 @@ cd Multimodel-RAG
 
 ### 2. Set up the environment
 ```bash
-git clone https://github.com/tonywang638156/Multimodel-RAG.git
-cd Multimodel-RAG
+python -m venv venv
+source venv/bin/activate
 ```
 
 ### 3. Get API keys
