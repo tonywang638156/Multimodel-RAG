@@ -137,7 +137,7 @@ git clone https://github.com/tonywang638156/Multimodel-RAG.git
 cd Multimodel-RAG
 ```
 
-### 3. Get an OpenAI API key
+### 3. Get API keys
 Create a .env file in the project root, replace OPENAI_API_KEY and GOOGLE_API_KEY with your own api key
 ```bash
 OPENAI_API_KEY=sk-...
