@@ -73,7 +73,7 @@ if "result_top1" not in st.session_state:
 if "result_top3" not in st.session_state:
     st.session_state["result_top3"] = None
 
-st.title("🎥 Upload a Video and Get Descriptive Semantic Frames")
+st.title("🎥 Interactive Video Learning Platform Through Multimodel RAG")
 
 uploaded_file = st.file_uploader("Upload a .mp4 video", type=["mp4"])
 
