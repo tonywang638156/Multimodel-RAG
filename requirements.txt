@@ -34,3 +34,6 @@ base58>=2.1.1
 
 # Openai
 openai>=1.0.0
+
+# Gemini
+google-generativeai

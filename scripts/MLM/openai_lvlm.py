@@ -20,25 +20,49 @@ class OpenAIVLM:
     def _encode_image(self, image_path: str) -> str:
         with open(image_path, "rb") as image_file:
             return base64.b64encode(image_file.read()).decode("utf-8")
+        
+    def _call(self, prompt: str, images: List[str]) -> str:
+        vision_payload = [{"type": "text", "text": prompt}]
+        for image_path in images:
+            base64_img = self._encode_image(image_path)
+            vision_payload.append({
+                "type": "image_url",
+                "image_url": {"url": f"data:image/jpeg;base64,{base64_img}"}
+            })
 
-    def _call(self, prompt: str, image: str) -> str:
-        base64_img = self._encode_image(image)
         response = client.chat.completions.create(
             model=self.model,
-            messages=[
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": prompt},
-                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_img}"}}
-                    ]
-                }
-            ],
+            messages=[{"role": "user", "content": vision_payload}],
             max_tokens=self.max_tokens,
         )
         return response.choices[0].message.content
 
     def invoke(self, input: Dict[str, str]) -> str:
         prompt = input['prompt']
-        image_path = input['image']
-        return self._call(prompt, image_path)
+        images = input['image']
+        if not isinstance(images, list):
+            images = [images]
+        return self._call(prompt, images)
+
+
+    # def _call(self, prompt: str, image: str) -> str:
+    #     base64_img = self._encode_image(image)
+    #     response = client.chat.completions.create(
+    #         model=self.model,
+    #         messages=[
+    #             {
+    #                 "role": "user",
+    #                 "content": [
+    #                     {"type": "text", "text": prompt},
+    #                     {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_img}"}}
+    #                 ]
+    #             }
+    #         ],
+    #         max_tokens=self.max_tokens,
+    #     )
+    #     return response.choices[0].message.content
+
+    # def invoke(self, input: Dict[str, str]) -> str:
+    #     prompt = input['prompt']
+    #     image_path = input['image']
+    #     return self._call(prompt, image_path)

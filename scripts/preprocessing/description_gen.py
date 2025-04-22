@@ -22,8 +22,8 @@ from .video_pre import (
 def extract_audio_segment(
     video_path: str,
     timestamp_ms: float,
-    before_sec: float = 2.5,
-    after_sec: float = 2.5,
+    before_sec: float = 3.5,
+    after_sec: float = 3.5,
     output_audio_path: str = "audio_segment.wav",
 ) -> str:
     clip = VideoFileClip(video_path)
@@ -60,8 +60,8 @@ def process_video_to_dataframe(
     downsample_fps: int   = 3,
     scene_threshold: float= 0.6,
     max_frames: int       = 40,
-    before_sec: float     = 2.5,
-    after_sec: float      = 2.5,
+    before_sec: float     = 3.5,
+    after_sec: float      = 3.5,
 ) -> pd.DataFrame:
     # prepare dirs
     Path(raw_image_dir).mkdir(parents=True, exist_ok=True)
@@ -149,13 +149,23 @@ def describe_frame_with_transcript(
     # 3) Base64‑encode the compressed bytes
     b64 = base64.b64encode(buffer.getvalue()).decode()
 
+    # prompt = (
+    #     "Here is the image:\n"
+    #     f"![frame](data:image/jpeg;base64,{b64})\n\n"
+    #     f"Here is the transcript of the image: \"{transcript}\".\n"
+    #     "Using the transcript as context, provide a description capturing ALL visible information. "
+    #     "Include the transcript alongside your description. (response should not be long)"
+    # )
     prompt = (
-        "Here is the image:\n"
+        "You are analyzing a frame from a fitness tutorial video about proper exercise:\n"
         f"![frame](data:image/jpeg;base64,{b64})\n\n"
-        f"Here is the transcript of the image: \"{transcript}\".\n"
-        "Using the transcript as context, provide a detailed description capturing ALL visible information. "
-        "Include the transcript alongside your description. (response should be under 380 tokens)"
+        f"The corresponding audio says: \"{transcript}\".\n\n"
+        "Based on the visual and transcript, briefly describe ONLY the key movement, pose, or technique being demonstrated by the person. "
+        "Focus on body position, angles, grip, or any exercise-specific technique. Do NOT mention irrelevant background details like the gym, lights, or equipment unrelated to the action.\n"
+        "Your goal is to help someone understand what exercise technique or tip is being shown in this exact frame.\n"
+        "Be clear and factual. Limit response to 5 sentences."
     )
+
 
     resp = client.chat.completions.create(
         model=model,

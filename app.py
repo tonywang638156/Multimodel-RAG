@@ -7,6 +7,13 @@ from scripts.preprocessing.description_gen import generate_descriptions_from_vid
 from scripts.rag_setup.auto_insert_data import seed_from_csv
 from pathlib import Path
 from moviepy.video.io.VideoFileClip import VideoFileClip
+from openai import OpenAI
+from dotenv import load_dotenv
+import tempfile
+import subprocess
+
+
+load_dotenv()
 
 def clear_lancedb_table(db_uri: str = "./shared_data/.lancedb", table_name: str = "demo_tbl"):
     import lancedb
@@ -59,6 +66,13 @@ def extract_video_clip_with_audio(
 
 # --- UI setup ---
 st.set_page_config(page_title="Video ↦ Semantic Frames")
+
+# Initialize result storage
+if "result_top1" not in st.session_state:
+    st.session_state["result_top1"] = None
+if "result_top3" not in st.session_state:
+    st.session_state["result_top3"] = None
+
 st.title("🎥 Upload a Video and Get Descriptive Semantic Frames")
 
 uploaded_file = st.file_uploader("Upload a .mp4 video", type=["mp4"])
@@ -74,6 +88,27 @@ if uploaded_file:
                 tmp.write(video_bytes)
                 video_path = tmp.name
                 st.session_state["video_file"] = video_path  # ✅ Save for RAG video clip
+
+
+                # Transcribe full audio using OpenAI Whisper
+                st.spinner("🗣️ Transcribing full video audio...")
+                client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as audio_file:
+                    # Convert to WAV using ffmpeg
+                    subprocess.call([
+                        "ffmpeg", "-y", "-i", video_path,
+                        "-vn", "-acodec", "pcm_s16le", "-ar", "16000",
+                        audio_file.name
+                    ])
+                    with open(audio_file.name, "rb") as f:
+                        resp = client.audio.transcriptions.create(
+                            file=f,
+                            model="whisper-1"
+                        )
+                        full_transcript = resp.text.strip()
+                        st.session_state["full_transcript"] = full_transcript
+
+
 
             df: pd.DataFrame = generate_descriptions_from_video(video_path)
             df.to_csv("frames_with_descriptions.csv", index=False)
@@ -111,7 +146,7 @@ user_query = st.text_input("📝 Enter your question (optional)")
 image_file = st.file_uploader("🖼️ Upload an image (optional)", type=["jpg", "jpeg", "png"], key="query_img")
 
 
-run_query = st.button("🚀 Run RAG Query")
+run_query = st.button("🚀 Naive Approach: Grounding all modalities in text")
 if run_query:
     image_path = None
     if image_file:
@@ -120,12 +155,15 @@ if run_query:
             tmp_img.write(image_file.read())
             image_path = tmp_img.name
 
-    result = run_custom_rag_pipeline(user_query=user_query, image_path=image_path)
+    result = run_custom_rag_pipeline(user_query=user_query, image_path=image_path, num_of_retrieval=1)
+    st.session_state["result_top1"] = result
+
     st.markdown("## 🎬 Video Clip")
     if "video_file" in st.session_state:
         clip_path = extract_video_clip_with_audio(
             video_path=st.session_state["video_file"],
-            timestamp_ms=result["metadata"]["timestamp_ms"]
+            #timestamp_ms=result["metadata"]["timestamp_ms"]
+            timestamp_ms=result["metadata"][0]["timestamp_ms"]
         )
         st.video(clip_path)
     st.markdown(f"**🧠 LLM Answer:** {result['llm_output']}")
@@ -133,6 +171,85 @@ if run_query:
         st.image(result["image_used"], caption="📸 Matched Frame", width=500)
         st.markdown(f"**📦 Metadata:**")
         st.json(result["metadata"])
+
+run_query_top3 = st.button("🚀 Improved DL approach: attention across all modalities")
+if run_query_top3:
+    image_path = None
+    if image_file:
+        st.image(image_file, caption="📸 User Query")
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp_img:
+            tmp_img.write(image_file.read())
+            image_path = tmp_img.name
+
+    #result = run_custom_rag_pipeline(user_query=user_query, image_path=image_path, num_of_retrieval=3)
+    result = run_custom_rag_pipeline(
+        user_query=user_query,
+        image_path=image_path,
+        num_of_retrieval=3,
+        full_transcript=st.session_state.get("full_transcript", "")
+    )
+    st.session_state["result_top3"] = result
+
+
+    # Extract video range based on top 3 metadata timestamps
+    timestamps = [meta["timestamp_ms"] for meta in result["metadata"]]
+    start_ms = min(timestamps)
+    end_ms = max(timestamps)
+
+    st.markdown("## 🎬 Combined Video Clip (Top 3 Context)")
+    if "video_file" in st.session_state:
+        clip_path = extract_video_clip_with_audio(
+            video_path=st.session_state["video_file"],
+            timestamp_ms=(start_ms + end_ms) / 2,
+            play_before_sec=(end_ms - start_ms) / 2000.0 / 2,  # convert ms to seconds
+            play_after_sec=(end_ms - start_ms) / 2000.0 / 2
+        )
+        st.video(clip_path)
+    
+    st.markdown(f"**🌠 Gemini 1.5 Pro Answer:** {result['llm_output']}")
+
+    with st.expander("## 📸 Top 3 Retrieved Frames"):
+        st.markdown("## 📸 Top 3 Retrieved Frames")
+        for i, (desc, img, meta) in enumerate(zip(result["description"], result["image_used"], result["metadata"])):
+            st.image(img, caption=f"Frame {i+1} | 🕒 {meta['timestamp_ms']} ms", width=500)
+            st.markdown(f"**📝 Description:** {desc}")
+            st.markdown("**📦 Metadata:**")
+            st.json(meta)
+            st.divider()
+
+# --------------- DISPLAY RESULTS --------------- #
+with st.expander("## 📝 Recap on these two models performance"):
+    # 🔹 Top-1 GPT-4o Result
+    if st.session_state["result_top1"]:
+        result = st.session_state["result_top1"]
+        st.markdown("## 🎬 Video Clip (Top-1 Result)")
+        if "video_file" in st.session_state:
+            clip_path = extract_video_clip_with_audio(
+                video_path=st.session_state["video_file"],
+                timestamp_ms=result["metadata"][0]["timestamp_ms"]
+            )
+            st.video(clip_path)
+        st.markdown(f"**🧠 GPT-4o Answer:** {result['llm_output']}")
+
+    # 🔸 Top-3 Gemini Result
+    if st.session_state["result_top3"]:
+        result = st.session_state["result_top3"]
+        timestamps = [meta["timestamp_ms"] for meta in result["metadata"]]
+        start_ms = min(timestamps)
+        end_ms = max(timestamps)
+
+        st.markdown("## 🎬 Combined Video Clip (Top 3 Result)")
+        if "video_file" in st.session_state:
+            clip_path = extract_video_clip_with_audio(
+                video_path=st.session_state["video_file"],
+                timestamp_ms=(start_ms + end_ms) / 2,
+                play_before_sec=(end_ms - start_ms) / 2000.0 / 2,
+                play_after_sec=(end_ms - start_ms) / 2000.0 / 2
+            )
+            st.video(clip_path)
+
+        st.markdown(f"**🌠 Gemini 1.5 Pro Answer:** {result['llm_output']}")
+
 
 # Dev tools
 with st.expander("⚙️ Developer Options"):
